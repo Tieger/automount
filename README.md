@@ -37,31 +37,37 @@ host_key_checking = False
 
 ### 功能
 
-1. 创建挂载目录
-2. 卸载已有挂载并清理 fstab 旧条目
-3. 强制格式化磁盘为 EXT4
+1. 检测磁盘是否已有文件系统（安全检查）
+2. 创建挂载目录
+3. 仅对空盘执行卸载旧条目、格式化为 EXT4
 4. 通过 `blkid` 获取 UUID
 5. 使用 UUID 挂载并写入 fstab
 
 ### 变量配置
 
-编辑 `automount.yml` 中的 `disks` 字典，key 为设备路径，value 为挂载点：
+编辑 `automount.yml` 中的变量：
 
 ```yaml
 vars:
   disks:
-    /dev/nvme1n1: /data
+    /dev/vdb: /data
     # 可添加多块盘
-    # /dev/nvme2n1: /data2
+    # /dev/vdc: /data2
+  # 设为 true 将强制格式化（危险：会清除数据）
+  force_format: false
 ```
 
 ### 执行
 
 ```bash
+# 安全模式（默认），已有文件系统的磁盘不会被格式化
 ansible-playbook -i hosts automount.yml
+
+# 强制模式（危险），所有磁盘都会被重新格式化
+ansible-playbook -i hosts automount.yml -e "force_format=true"
 ```
 
-> ⚠️ **警告**：此 playbook 使用 `force: true` 强制格式化，每次运行都会清除磁盘数据，请确认目标磁盘无重要数据。
+> ⚠️ **警告**：`force_format=true` 会强制格式化所有磁盘，数据将被清除，请谨慎使用。
 
 ## Playbook 2：XFS 分区挂载（mount_xfs.yml）
 
